@@ -1,24 +1,21 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from "react";
+import PopUp from "./components/PopUp";
+import { FaRobot } from "react-icons/fa";
+import "./App.css"; // Floating icon style
 
 function App() {
+  const [showChat, setShowChat] = useState(false);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+      {/* Floating Chatbot Icon */}
+      <div className="chatbot-icon" onClick={() => setShowChat(!showChat)}>
+        <FaRobot />
+      </div>
+
+      {/* Chat Popup */}
+      <PopUp isOpen={showChat} onClose={() => setShowChat(false)} />
+    </>
   );
 }
 

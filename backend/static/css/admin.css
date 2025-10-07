@@ -1,0 +1,199 @@
+/* ====== BODY ====== */
+body {
+  font-family: 'Roboto', 'Segoe UI', Tahoma, sans-serif;
+  background: #f4f4f7;
+  color: #333;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+}
+
+/* ====== CONTAINER ====== */
+.container {
+  max-width: 700px;
+  width: 100%;
+  padding: 30px;
+  background: #ffffff;
+  border-radius: 15px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e0e0e0;
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+.container:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+/* ====== HEADINGS ====== */
+h1, h2 {
+  text-align: center;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  font-family: 'Roboto', sans-serif;
+}
+
+h1 {
+  font-size: 28px;
+  margin-bottom: 15px;
+}
+
+h2 {
+  font-size: 20px;
+  margin-top: 25px;
+}
+
+/* ====== FORM ====== */
+.center-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+input[type="text"], input[type="file"] {
+  padding: 12px;
+  margin: 8px 0;
+  width: 95%;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  font-size: 15px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  background: #f9f9f9;
+}
+
+input[type="text"]:focus, input[type="file"]:focus {
+  border-color: #000;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
+  outline: none;
+}
+
+/* ====== BUTTONS ====== */
+button {
+  padding: 12px 20px;
+  margin: 5px;
+  border: none;
+  background: #000;
+  color: #fff;
+  cursor: pointer;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+button:hover {
+  background: #222;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+/* ====== RESOURCE LIST ====== */
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+li {
+  border: 1px solid #ddd;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+li:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+li a {
+  font-weight: 600;
+  color: #000;
+  text-decoration: none;
+}
+
+li a:hover {
+  text-decoration: underline;
+}
+
+/* ====== DESCRIPTION ====== */
+.desc {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #555;
+}
+
+/* ====== INPUT FIELDS ====== */
+.editDescInput, .editFileInput {
+  display: none;
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+/* ====== BUTTON GROUP ====== */
+.btn-group {
+  margin-top: 12px;
+}
+
+button.edit-resource {
+  background: #000000;
+}
+
+button.edit-resource:hover {
+  background: #000000;
+}
+
+button.save-resource {
+  background: #000000;
+}
+
+button.save-resource:hover {
+  background: #000000;
+}
+
+button.cancel-edit {
+  background: #000000;
+}
+
+button.cancel-edit:hover {
+  background: #000000;
+}
+
+button.delete-resource {
+  background: #da0101;
+}
+
+button.delete-resource:hover {
+  background: #da0101;
+}
+
+.upload-section {
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #ddd;
+}
+
+.resources-section {
+  padding-top: 20px;
+}
+
+.upload-section h2,
+.resources-section h2 {
+  text-align: center;
+  font-size: 22px;
+  margin-bottom: 20px;
+  font-weight: 600;
+}

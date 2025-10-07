@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h1>QuickieBot Admin Panel</h1>
+    <p class="welcome">Welcome, {{ username }}!</p>
+
+    <!-- Logout -->
+    <form id="logoutForm" class="center-form">
+      <button type="submit">Logout</button>
+    </form>
+
+    <!-- Upload Form -->
+    <div class="upload-section">
+      <h2>Upload New Resource</h2>
+      <form id="uploadForm" enctype="multipart/form-data" class="center-form">
+        <input type="file" name="file" id="fileInput" required>
+        <input type="text" name="description" id="descInput" placeholder="Description (optional)">
+        <button type="submit">Upload Resource</button>
+      </form>
+    </div>
+
+    <!-- Uploaded Resources -->
+    <div class="resources-section">
+      <h2>Uploaded Resources</h2>
+      <ul id="resourceList">
+        {% for res in resources %}
+          <li data-id="{{ res.id }}">
+            <a href="{{ url_for('uploaded_file', filename=res.filename) }}" target="_blank">{{ res.filename }}</a>
+            <p class="desc">{{ res.description }}</p>
+
+            <input type="text" class="editDescInput" value="{{ res.description }}">
+            <input type="file" class="editFileInput">
+
+            <div class="btn-group">
+              <button class="edit-resource">Edit</button>
+              <button class="save-resource">Save</button>
+              <button class="cancel-edit">Cancel</button>
+              <button class="delete-resource">Delete</button>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // Logout
+      document.getElementById("logoutForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        await fetch("/admin/logout", { method: "POST" });
+        window.location.href = "/admin/login";
+      });
+
+      // File Upload
+      document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const formData = new FormData();
+        formData.append("file", document.getElementById("fileInput").files[0]);
+        formData.append("description", document.getElementById("descInput").value);
+
+        await fetch("/api/resources", {
+          method: "POST",
+          body: formData
+        });
+        location.reload();
+      });
+
+      // Edit Resource
+      document.querySelectorAll(".edit-resource").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          const li = e.target.closest("li");
+          li.querySelector(".desc").style.display = "none";
+          li.querySelector(".editDescInput").style.display = "block";
+          li.querySelector(".editFileInput").style.display = "block";
+          li.querySelector(".edit-resource").style.display = "none";
+          li.querySelector(".save-resource").style.display = "inline-block";
+          li.querySelector(".cancel-edit").style.display = "inline-block";
+        });
+      });
+
+      // Cancel Edit
+      document.querySelectorAll(".cancel-edit").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          const li = e.target.closest("li");
+          li.querySelector(".desc").style.display = "block";
+          li.querySelector(".editDescInput").style.display = "none";
+          li.querySelector(".editFileInput").style.display = "none";
+          li.querySelector(".edit-resource").style.display = "inline-block";
+          li.querySelector(".save-resource").style.display = "none";
+          li.querySelector(".cancel-edit").style.display = "none";
+        });
+      });
+
+      // Save Resource
+      document.querySelectorAll(".save-resource").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+          const li = e.target.closest("li");
+          const id = li.dataset.id;
+          const formData = new FormData();
+          formData.append("description", li.querySelector(".editDescInput").value);
+          if (li.querySelector(".editFileInput").files.length > 0) {
+            formData.append("file", li.querySelector(".editFileInput").files[0]);
+          }
+          await fetch(`/api/resources/${id}`, { method: "PUT", body: formData });
+          location.reload();
+        });
+      });
+
+      // Delete Resource
+      document.querySelectorAll(".delete-resource").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+          const li = e.target.closest("li");
+          const id = li.dataset.id;
+          await fetch(`/api/resources/${id}`, { method: "DELETE" });
+          location.reload();
+        });
+      });
+    });
+  </script>
+</body>
+</html>
