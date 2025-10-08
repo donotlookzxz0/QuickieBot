@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -9,62 +9,62 @@ import "katex/dist/katex.min.css";
 export default function PopUp({ isOpen, onClose }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-  const [files, setFiles] = useState([]); // multiple files
+  const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
-  const messagesEndRef = useRef(null);
-
-  // Scroll to bottom whenever messages or loading changes
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading, files]);
+  const textareaRef = useRef(null);
 
   const sendMessage = async () => {
-    if (!input.trim() && files.length === 0) return;
+    if (!input.trim() && !file) return;
 
     const newMessages = [
       ...messages,
-      {
-        from: "user",
-        text: input || (files.length > 0 ? files.map(f => f.name).join(", ") : ""),
-      },
+      { from: "user", text: input || (file ? file.name : "") },
     ];
     setMessages(newMessages);
     setInput("");
     setLoading(true);
 
     try {
-      if (files.length > 0) {
+      let res;
+      if (file) {
         const formData = new FormData();
-        files.forEach((file) => formData.append("files", file));
-        formData.append("message", input);
-
-        const res = await fetch("http://localhost:5000/chat/file", {
+        formData.append("file", file);
+        res = await fetch("http://localhost:5000/chat/file", {
           method: "POST",
           body: formData,
         });
-        const data = await res.json();
-        setMessages([...newMessages, { from: "bot", text: data.reply }]);
-        setFiles([]); // clear files after sending
       } else {
-        const res = await fetch("http://localhost:5000/chat", {
+        res = await fetch("http://localhost:5000/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: input }),
         });
-        const data = await res.json();
-        setMessages([...newMessages, { from: "bot", text: data.reply }]);
       }
+
+      const data = await res.json();
+      setMessages([...newMessages, { from: "bot", text: data.reply }]);
+      setFile(null);
     } catch (err) {
-      setMessages([...newMessages, { from: "bot", text: "Error connecting to backend." }]);
+      setMessages([
+        ...newMessages,
+        { from: "bot", text: "Error connecting to backend." },
+      ]);
     } finally {
       setLoading(false);
     }
   };
 
-  const removeFile = (index) => {
-    const updatedFiles = [...files];
-    updatedFiles.splice(index, 1);
-    setFiles(updatedFiles);
+  const removeFile = () => setFile(null);
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
   };
 
   if (!isOpen) return null;
@@ -73,20 +73,22 @@ export default function PopUp({ isOpen, onClose }) {
     <div className="chat-popup">
       <div className="chat-header">
         <strong>QuickieBot</strong>
-        <button onClick={onClose} className="close-btn">✖</button>
+        <button onClick={onClose} className="close-btn">
+          ✖
+        </button>
       </div>
 
       <div className="chat-messages">
-        {/* Render file previews at the top */}
-        {files.map((file, index) => (
-          <div key={index} className="chat-message user file-preview">
-            <strong>Uploaded: </strong>
+        {file && (
+          <div className="chat-message user file-preview">
+            <strong>You uploaded: </strong>
             {file.name}
-            <span className="remove-file" onClick={() => removeFile(index)}>✖</span>
+            <span className="remove-file" onClick={removeFile}>
+              ✖
+            </span>
           </div>
-        ))}
+        )}
 
-        {/* Render chat messages */}
         {messages.map((msg, i) => (
           <div key={i} className={`chat-message ${msg.from}`}>
             <strong>{msg.from === "user" ? "You: " : "QuickieBot: "}</strong>
@@ -98,6 +100,12 @@ export default function PopUp({ isOpen, onClose }) {
                 >
                   {msg.text}
                 </ReactMarkdown>
+                <button
+                  className="copy-btn"
+                  onClick={() => copyToClipboard(msg.text)}
+                >
+                  Copy
+                </button>
               </div>
             ) : (
               <span>{msg.text}</span>
@@ -105,7 +113,6 @@ export default function PopUp({ isOpen, onClose }) {
           </div>
         ))}
 
-        {/* Typing indicator */}
         {loading && (
           <div className="chat-message bot typing">
             <strong>QuickieBot: </strong>
@@ -116,28 +123,26 @@ export default function PopUp({ isOpen, onClose }) {
             </span>
           </div>
         )}
-
-        {/* Reference div to scroll into view */}
-        <div ref={messagesEndRef} />
       </div>
 
       <div className="chat-input-container">
-        <input
-          type="text"
+        <textarea
+          ref={textareaRef}
           className="chat-input"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Type a question..."
+          onKeyDown={handleKeyDown}
+          placeholder="Ask QuickieBot "
+          rows={1}
         />
 
         <div className="file-upload-container">
           <label className="file-upload-label">
-            Upload Files
+            {file ? "Change File" : "Upload File"}
             <input
               type="file"
               className="file-input"
-              multiple
-              onChange={(e) => setFiles([...files, ...Array.from(e.target.files)])}
+              onChange={(e) => setFile(e.target.files[0])}
             />
           </label>
         </div>

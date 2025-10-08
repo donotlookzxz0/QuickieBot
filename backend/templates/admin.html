@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Admin Panel</title>
+  <title>QuickieBot Admin Panel</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
 </head>
 <body>
@@ -12,40 +12,53 @@
 
     <!-- Logout -->
     <form id="logoutForm" class="center-form">
-      <button type="submit">Logout</button>
+      <button type="submit" class="logout-btn">Logout</button>
     </form>
 
-    <!-- Upload Form -->
+    <!-- Upload Section -->
     <div class="upload-section">
       <h2>Upload New Resource</h2>
       <form id="uploadForm" enctype="multipart/form-data" class="center-form">
         <input type="file" name="file" id="fileInput" required>
+        <input type="file" name="thumbnail" id="thumbInput" accept="image/*">
         <input type="text" name="description" id="descInput" placeholder="Description (optional)">
-        <button type="submit">Upload Resource</button>
+        <button type="submit" class="upload-btn">Upload Resource</button>
       </form>
     </div>
 
-    <!-- Uploaded Resources -->
+    <!-- Resource List -->
     <div class="resources-section">
       <h2>Uploaded Resources</h2>
-      <ul id="resourceList">
+      <div id="resourceGrid" class="resource-grid">
         {% for res in resources %}
-          <li data-id="{{ res.id }}">
-            <a href="{{ url_for('uploaded_file', filename=res.filename) }}" target="_blank">{{ res.filename }}</a>
-            <p class="desc">{{ res.description }}</p>
+        <div class="resource-card" data-id="{{ res.id }}">
+          {% if res.thumbnail %}
+            <img src="{{ url_for('uploaded_file', filename=res.thumbnail) }}" alt="Thumbnail" class="resource-thumb">
+          {% else %}
+            <div class="resource-thumb placeholder">No Thumbnail</div>
+          {% endif %}
 
-            <input type="text" class="editDescInput" value="{{ res.description }}">
-            <input type="file" class="editFileInput">
+          <div class="resource-info">
+            <h3>{{ res.filename }}</h3>
+            <p class="desc">{{ res.description or 'No description provided.' }}</p>
 
-            <div class="btn-group">
-              <button class="edit-resource">Edit</button>
-              <button class="save-resource">Save</button>
-              <button class="cancel-edit">Cancel</button>
-              <button class="delete-resource">Delete</button>
+            <div class="edit-fields">
+              <input type="text" class="editDescInput" value="{{ res.description }}">
+              <input type="file" class="editFileInput">
+              <input type="file" class="editThumbInput" accept="image/*">
             </div>
-          </li>
+          </div>
+
+          <div class="btn-group">
+            <a href="{{ url_for('uploaded_file', filename=res.filename) }}" target="_blank" class="view-link">View / Download</a>
+            <button class="edit-resource">Edit</button>
+            <button class="save-resource">Save</button>
+            <button class="cancel-edit">Cancel</button>
+            <button class="delete-resource">Delete</button>
+          </div>
+        </div>
         {% endfor %}
-      </ul>
+      </div>
     </div>
   </div>
 
@@ -58,66 +71,52 @@
         window.location.href = "/admin/login";
       });
 
-      // File Upload
+      // Upload
       document.getElementById("uploadForm").addEventListener("submit", async (e) => {
         e.preventDefault();
         const formData = new FormData();
         formData.append("file", document.getElementById("fileInput").files[0]);
+        const thumb = document.getElementById("thumbInput").files[0];
+        if (thumb) formData.append("thumbnail", thumb);
         formData.append("description", document.getElementById("descInput").value);
-
-        await fetch("/api/resources", {
-          method: "POST",
-          body: formData
-        });
+        await fetch("/api/resources", { method: "POST", body: formData });
         location.reload();
       });
 
-      // Edit Resource
+      // Edit, Save, Cancel, Delete Logic
       document.querySelectorAll(".edit-resource").forEach(btn => {
         btn.addEventListener("click", (e) => {
-          const li = e.target.closest("li");
-          li.querySelector(".desc").style.display = "none";
-          li.querySelector(".editDescInput").style.display = "block";
-          li.querySelector(".editFileInput").style.display = "block";
-          li.querySelector(".edit-resource").style.display = "none";
-          li.querySelector(".save-resource").style.display = "inline-block";
-          li.querySelector(".cancel-edit").style.display = "inline-block";
+          const card = e.target.closest(".resource-card");
+          card.classList.add("editing");
         });
       });
 
-      // Cancel Edit
       document.querySelectorAll(".cancel-edit").forEach(btn => {
         btn.addEventListener("click", (e) => {
-          const li = e.target.closest("li");
-          li.querySelector(".desc").style.display = "block";
-          li.querySelector(".editDescInput").style.display = "none";
-          li.querySelector(".editFileInput").style.display = "none";
-          li.querySelector(".edit-resource").style.display = "inline-block";
-          li.querySelector(".save-resource").style.display = "none";
-          li.querySelector(".cancel-edit").style.display = "none";
+          const card = e.target.closest(".resource-card");
+          card.classList.remove("editing");
         });
       });
 
-      // Save Resource
       document.querySelectorAll(".save-resource").forEach(btn => {
         btn.addEventListener("click", async (e) => {
-          const li = e.target.closest("li");
-          const id = li.dataset.id;
+          const card = e.target.closest(".resource-card");
+          const id = card.dataset.id;
           const formData = new FormData();
-          formData.append("description", li.querySelector(".editDescInput").value);
-          if (li.querySelector(".editFileInput").files.length > 0) {
-            formData.append("file", li.querySelector(".editFileInput").files[0]);
-          }
+          formData.append("description", card.querySelector(".editDescInput").value);
+          if (card.querySelector(".editFileInput").files.length > 0)
+            formData.append("file", card.querySelector(".editFileInput").files[0]);
+          if (card.querySelector(".editThumbInput").files.length > 0)
+            formData.append("thumbnail", card.querySelector(".editThumbInput").files[0]);
           await fetch(`/api/resources/${id}`, { method: "PUT", body: formData });
           location.reload();
         });
       });
 
-      // Delete Resource
       document.querySelectorAll(".delete-resource").forEach(btn => {
         btn.addEventListener("click", async (e) => {
-          const li = e.target.closest("li");
-          const id = li.dataset.id;
+          const card = e.target.closest(".resource-card");
+          const id = card.dataset.id;
           await fetch(`/api/resources/${id}`, { method: "DELETE" });
           location.reload();
         });

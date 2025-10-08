@@ -10,7 +10,7 @@ nav {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  background-color: #0073e6; /* Canvas-style blue */
+  background-color: #000000; /* Canvas-style blue */
   padding: 1rem 2rem;
   color: white;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
@@ -37,7 +37,7 @@ nav span {
 nav button {
   padding: 0.4rem 0.8rem;
   background-color: white;
-  color: #0073e6;
+  color: #000000;
   font-weight: bold;
   border: none;
   border-radius: 6px;

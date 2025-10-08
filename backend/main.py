@@ -7,6 +7,7 @@ from werkzeug.utils import secure_filename
 from flask_sqlalchemy import SQLAlchemy
 import os
 
+
 # --- Flask Setup ---
 app = Flask(__name__, template_folder="templates", static_folder="static")
 CORS(app, supports_credentials=True, origins=["http://localhost:3000"])
@@ -45,7 +46,7 @@ class Resource(db.Model):
     filename = db.Column(db.String(200), nullable=False)
     description = db.Column(db.String(500))
     filepath = db.Column(db.String(500), nullable=False)
-
+    thumbnail = db.Column(db.String(500))
 
 # --- Helpers ---
 def allowed_file(filename):
@@ -92,27 +93,64 @@ def chat_file():
 
     content = ""
 
-    # Handle different file types
     try:
-        if filename.endswith(".txt"):
-            content = uploaded_file.read().decode("utf-8")
-        elif filename.endswith(".pdf"):
+        ext = filename.rsplit(".", 1)[1].lower()
+
+        # --- Handle text-based files ---
+        if ext == "txt":
+            content = uploaded_file.read().decode("utf-8", errors="ignore")
+
+        elif ext == "pdf":
             import PyPDF2
             reader = PyPDF2.PdfReader(uploaded_file)
             for page in reader.pages:
-                content += page.extract_text()
-        elif filename.endswith(".docx"):
+                content += page.extract_text() or ""
+
+        elif ext == "docx":
             import docx
             doc = docx.Document(uploaded_file)
             for para in doc.paragraphs:
                 content += para.text + "\n"
+
+        elif ext == "pptx":
+            from pptx import Presentation
+            prs = Presentation(uploaded_file)
+            for slide in prs.slides:
+                for shape in slide.shapes:
+                    if hasattr(shape, "text"):
+                        content += shape.text + "\n"
+
+        # --- Handle image files (jpg, jpeg, png) ---
+        elif ext in {"jpg", "jpeg", "png"}:
+            import base64
+            import io
+            from PIL import Image
+
+            # Convert image to base64 for Gemini
+            image = Image.open(uploaded_file)
+            buffered = io.BytesIO()
+            image.save(buffered, format=image.format)
+            img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+            content = f"[Image uploaded: {filename}]"
+
+            # Use Gemini’s multimodal capability
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=[
+                    types.Part.from_text("Describe and summarize this image in educational context."),
+                    types.Part.from_data(mime_type=f"image/{ext}", data=base64.b64decode(img_str)),
+                ],
+            )
+            return jsonify({"reply": response.text})
+
         else:
-            return jsonify({"reply": "File type not supported for summarization."}), 400
+            return jsonify({"reply": "Unsupported file type."}), 400
+
     except Exception as e:
         print("Error reading file:", e)
-        return jsonify({"reply": "Error reading file."}), 500
+        return jsonify({"reply": f"Error reading file: {str(e)}"}), 500
 
-    # Send content to Gemini AI
+    # --- Text-based summarization (default) ---
     try:
         response = client.models.generate_content(
             model="gemini-2.5-flash",
@@ -125,7 +163,6 @@ def chat_file():
     except Exception as e:
         print("Gemini AI error:", e)
         return jsonify({"reply": "Error processing the file with AI."}), 500
-
 
 # USER AUTH ROUTES
 
@@ -220,7 +257,7 @@ def logout_admin():
 def list_resources():
     res_list = Resource.query.all()
     return jsonify([
-        {"id": r.id, "filename": r.filename, "description": r.description, "filepath": r.filepath}
+        {"id": r.id, "filename": r.filename, "description": r.description, "filepath": r.filepath, "thumbnail": r.thumbnail}
         for r in res_list
     ])
 
@@ -230,6 +267,7 @@ def upload_resource():
     if "file" not in request.files:
         return jsonify({"error": "No file part"}), 400
     file = request.files["file"]
+    thumbnail = request.files.get("thumbnail")
     description = request.form.get("description", "")
     if file.filename == "":
         return jsonify({"error": "No selected file"}), 400
@@ -238,10 +276,24 @@ def upload_resource():
     filename = secure_filename(file.filename)
     filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
     file.save(filepath)
-    resource = Resource(filename=filename, description=description, filepath=filepath)
+
+    thumbnail_filename = None
+    if thumbnail and thumbnail.filename != "":
+        thumb_name = secure_filename(thumbnail.filename)
+        thumb_path = os.path.join(app.config["UPLOAD_FOLDER"], thumb_name)
+        thumbnail.save(thumb_path)
+        thumbnail_filename = thumb_name
+
+    resource = Resource(filename=filename, description=description, filepath=filepath, thumbnail=thumbnail_filename )
     db.session.add(resource)
     db.session.commit()
-    return jsonify({"id": resource.id, "filename": resource.filename, "description": resource.description, "filepath": resource.filepath}), 201
+    return jsonify({
+        "id": resource.id, 
+        "filename": resource.filename, 
+        "description": resource.description, 
+        "filepath": resource.filepath,
+        "thumbnail": resource.thumbnail
+        }), 201
 
 @app.route("/api/resources/<int:resource_id>", methods=["PUT"])
 def update_resource(resource_id):
@@ -321,7 +373,7 @@ def register_page():
 
 @app.route("/")
 def home():
-    return "QuickieBot backend is running with persistent Admins and File Upload System!"
+    return "Backend running"
 
 with app.app_context():
     db.create_all()  # Creates tables if they don't exist

@@ -1,0 +1,118 @@
+.resource-list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* exactly 4 cards per row */
+  gap: 1.2rem;
+  padding: 24px;
+}
+.resource-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  
+  word-wrap: break-word;
+  overflow: hidden;
+}
+
+
+.resource-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+}
+
+.resource-thumb {
+  width: 100%;
+  aspect-ratio: 1 / 1; /* makes it a square */
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.resource-thumb.placeholder {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #777;
+  font-size: 0.9rem;
+  font-style: italic;
+  background: #f8f8f8;
+  border: 1px dashed #ccc;
+  border-radius: 8px;
+  aspect-ratio: 1 / 1; /* matches thumbnail shape */
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.file-icon {
+  font-size: 1.6rem;
+}
+
+
+.file-name {
+  margin: 0;
+  font-size: 1.05rem;
+  color: #2c3e50;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap; /* keeps filename in one line */
+  max-width: 100%;
+}
+
+/* Optional — if you want really long filenames to wrap instead of truncate */
+.file-name.wrap {
+  white-space: normal;
+  word-break: break-word;
+}
+
+.file-description {
+  color: #555;
+  font-size: 0.9rem;
+  margin: 8px 0 12px;
+  flex-grow: 1;
+
+  /* Allow multi-line wrapping */
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
+}
+
+.file-date {
+  font-size: 0.8rem;
+  color: #888;
+  margin-bottom: 12px;
+}
+
+.download-link {
+  text-decoration: none;
+  text-align: center;
+  background: #2c3e50;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.download-link:hover {
+  background: #34495e;
+  transform: scale(1.05);
+}
+
+.loading-text,
+.empty-text {
+  text-align: center;
+  color: #555;
+  margin-top: 40px;
+  font-size: 1rem;
+}
