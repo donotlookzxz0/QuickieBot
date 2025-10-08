@@ -9,7 +9,7 @@ import os
 
 # --- Flask Setup ---
 app = Flask(__name__, template_folder="templates", static_folder="static")
-CORS(app)
+CORS(app, supports_credentials=True, origins=["http://localhost:3000"])
 app.secret_key = "supersecretkey"  # change for production
 
 # --- SQLite Database Setup ---
@@ -33,6 +33,12 @@ class Admin(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)   
 
 class Resource(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -68,7 +74,104 @@ def chat():
     except Exception as e:
         print("Error:", e)
         return jsonify({"reply": "Sorry, QuickieBot ran into an issue."}), 500
+    
 
+@app.route("/chat/file", methods=["POST"])
+def chat_file():
+    if "file" not in request.files:
+        return jsonify({"reply": "No file uploaded."}), 400
+
+    uploaded_file = request.files["file"]
+    filename = uploaded_file.filename
+
+    if filename == "":
+        return jsonify({"reply": "No selected file."}), 400
+
+    if not allowed_file(filename):
+        return jsonify({"reply": "File type not allowed."}), 400
+
+    content = ""
+
+    # Handle different file types
+    try:
+        if filename.endswith(".txt"):
+            content = uploaded_file.read().decode("utf-8")
+        elif filename.endswith(".pdf"):
+            import PyPDF2
+            reader = PyPDF2.PdfReader(uploaded_file)
+            for page in reader.pages:
+                content += page.extract_text()
+        elif filename.endswith(".docx"):
+            import docx
+            doc = docx.Document(uploaded_file)
+            for para in doc.paragraphs:
+                content += para.text + "\n"
+        else:
+            return jsonify({"reply": "File type not supported for summarization."}), 400
+    except Exception as e:
+        print("Error reading file:", e)
+        return jsonify({"reply": "Error reading file."}), 500
+
+    # Send content to Gemini AI
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=f"Summarize this content for students and provide examples:\n{content}",
+            config=types.GenerateContentConfig(
+                thinking_config=types.ThinkingConfig(thinking_budget=0)
+            ),
+        )
+        return jsonify({"reply": response.text})
+    except Exception as e:
+        print("Gemini AI error:", e)
+        return jsonify({"reply": "Error processing the file with AI."}), 500
+
+
+# USER AUTH ROUTES
+
+@app.route("/user/register", methods=["POST"])
+def register_user():
+    data = request.get_json()
+    username = data.get("username")
+    email = data.get("email")
+    password = data.get("password")
+
+    if not username or not email or not password:
+        return jsonify({"error": "All fields are required."}), 400
+    if User.query.filter_by(username=username).first():
+        return jsonify({"error": "Username already exists."}), 400
+    if User.query.filter_by(email=email).first():
+        return jsonify({"error": "Email already registered."}), 400
+
+    new_user = User(
+        username=username,
+        email=email,
+        password=generate_password_hash(password),
+    )
+    db.session.add(new_user)
+    db.session.commit()
+    return jsonify({"message": "User registered successfully!"}), 201
+
+
+@app.route("/user/login", methods=["POST"])
+def login_user():
+    data = request.get_json()
+    username = data.get("username")
+    password = data.get("password")
+
+    user = User.query.filter_by(username=username).first()
+    if not user or not check_password_hash(user.password, password):
+        return jsonify({"error": "Invalid username or password."}), 401
+
+    session["user_id"] = user.id
+    session["username"] = user.username
+    return jsonify({"message": f"Welcome, {user.username}!"})
+
+
+@app.route("/user/logout", methods=["POST"])
+def logout_user():
+    session.clear()
+    return jsonify({"message": "Logged out successfully."})
 
 # --- Admin Register ---
 @app.route("/admin/register", methods=["POST"])
