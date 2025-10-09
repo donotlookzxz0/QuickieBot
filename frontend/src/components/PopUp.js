@@ -29,12 +29,12 @@ export default function PopUp({ isOpen, onClose }) {
       if (file) {
         const formData = new FormData();
         formData.append("file", file);
-        res = await fetch("http://localhost:5000/chat/file", {
+        res = await fetch("https://quickiebot.onrender.com/chat/file", {
           method: "POST",
           body: formData,
         });
       } else {
-        res = await fetch("http://localhost:5000/chat", {
+        res = await fetch("https://quickiebot.onrender.com/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: input }),

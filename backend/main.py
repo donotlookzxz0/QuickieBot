@@ -14,7 +14,7 @@ SECRET_KEY = os.getenv("FLASK_SECRET_KEY")
 
 # --- Flask Setup ---
 app = Flask(__name__, template_folder="templates", static_folder="static")
-CORS(app, supports_credentials=True, origins=["http://localhost:3000"])
+CORS(app, supports_credentials=True, origins=["https://quickie-bot.vercel.app"])
 app.secret_key = "SECRET_KEY"  # change for production
 
 # --- SQLite Database Setup ---

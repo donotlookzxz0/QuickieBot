@@ -8,7 +8,7 @@ export default function ResourceList() {
   useEffect(() => {
     const fetchResources = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/resources");
+        const res = await fetch("https://quickiebot.onrender.com/api/resources");
         const data = await res.json();
         setResources(data);
       } catch (err) {
@@ -31,7 +31,7 @@ export default function ResourceList() {
           {/* Thumbnail Section */}
           {r.thumbnail ? (
             <img
-              src={`http://localhost:5000/uploads/${r.thumbnail}`}
+              src={`https://quickiebot.onrender.com/uploads/${r.thumbnail}`}
               alt="Thumbnail"
               className="resource-thumb"
             />
@@ -55,7 +55,7 @@ export default function ResourceList() {
           )}
 
           <a
-            href={`http://localhost:5000/uploads/${r.filename}`}
+            href={`https://quickiebot.onrender.com/uploads/${r.filename}`}
             target="_blank"
             rel="noopener noreferrer"
             className="download-link"
