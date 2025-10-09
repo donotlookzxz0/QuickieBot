@@ -5,13 +5,17 @@ from google.genai import types
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from flask_sqlalchemy import SQLAlchemy
+from dotenv import load_dotenv
 import os
 
+load_dotenv()
+API_KEY = os.getenv("GOOGLE_GEMINI_API_KEY")
+SECRET_KEY = os.getenv("FLASK_SECRET_KEY")
 
 # --- Flask Setup ---
 app = Flask(__name__, template_folder="templates", static_folder="static")
 CORS(app, supports_credentials=True, origins=["http://localhost:3000"])
-app.secret_key = "supersecretkey"  # change for production
+app.secret_key = "SECRET_KEY"  # change for production
 
 # --- SQLite Database Setup ---
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///quickiebot.db"
@@ -25,7 +29,7 @@ ALLOWED_EXTENSIONS = {"pdf", "docx", "pptx", "jpg", "jpeg", "png", "txt"}
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 # --- Gemini API Setup ---
-API_KEY = "AIzaSyD7chGs52KsKRRr-0XUzNslIEUy14TRxPs"
+
 client = genai.Client(api_key=API_KEY)
 
 # --- Database Models ---
@@ -379,4 +383,6 @@ with app.app_context():
     db.create_all()  # Creates tables if they don't exist
 
 if __name__ == "__main__":
-    app.run(port=5000, debug=True)
+    debug_mode = os.getenv("FLASK_DEBUG", "false").lower() == "true"
+    port = int(os.getenv("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=debug_mode)
